@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="To-Do Familiar">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#667eea">
+    <meta name="msapplication-TileColor" content="#667eea">
+    <meta name="msapplication-tap-highlight" content="no">
+    <title>To-Do Familiar</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1><i class="fas fa-home"></i> To-Do Familiar</h1>
+            <div class="date-display" id="currentDate"></div>
+        </header>
+
+        <!-- User Selection -->
+        <div class="user-selector">
+            <button class="user-btn active" data-user="todos">
+                <i class="fas fa-users"></i> Todos
+            </button>
+            <button class="user-btn" data-user="mama">
+                <i class="fas fa-female"></i> Mamá
+            </button>
+            <button class="user-btn" data-user="papa">
+                <i class="fas fa-male"></i> Papá
+            </button>
+            <button class="user-btn" data-user="hijo">
+                <i class="fas fa-child"></i> Hijo
+            </button>
+            <button class="user-btn" data-user="hija">
+                <i class="fas fa-child"></i> Hija
+            </button>
+            <button id="showScoreboardBtn" class="scoreboard-btn">
+                <i class="fas fa-trophy"></i> Scoreboard
+            </button>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Daily Tasks Section -->
+            <section class="tasks-section">
+                <h2><i class="fas fa-calendar-day"></i> Tareas Diarias</h2>
+                <div class="tasks-container" id="dailyTasks">
+                    <!-- Daily tasks will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Custom Tasks Section -->
+            <section class="tasks-section">
+                <h2><i class="fas fa-plus-circle"></i> Tareas Personalizadas</h2>
+                <div class="add-task-container">
+                    <input type="text" id="newTaskInput" placeholder="Agregar nueva tarea..." maxlength="100">
+                    <button id="addTaskBtn" class="add-btn">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                </div>
+                <div class="tasks-container" id="customTasks">
+                    <!-- Custom tasks will be loaded here -->
+                </div>
+            </section>
+        </main>
+
+        <!-- Stats Footer -->
+        <footer class="footer">
+            <div class="stats">
+                <div class="stat-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span id="completedCount">0</span> completadas
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    <span id="pendingCount">0</span> pendientes
+                </div>
+            </div>
+            <div class="summary-actions">
+                <button id="showSummaryBtn" class="summary-btn">
+                    <i class="fas fa-list-check"></i> Ver Resumen del Día
+                </button>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Task Template -->
+    <template id="taskTemplate">
+        <div class="task-item" data-task-id="">
+            <div class="task-content">
+                <button class="task-checkbox">
+                    <i class="fas fa-circle"></i>
+                </button>
+                <span class="task-text"></span>
+                <div class="task-actions">
+                    <button class="task-edit-btn">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="task-delete-btn">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="script.js"></script>
+</body>
+</html> 
