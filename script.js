@@ -259,11 +259,17 @@ class TodoApp {
     }
 
     toggleTask(taskId) {
+        console.log('toggleTask llamado con ID:', taskId);
+        
         let task = this.findTask(taskId);
+        console.log('Task encontrada en this.tasks:', task);
         
         // Si no existe en this.tasks, buscar en dailyTasks y crear entrada
         if (!task) {
+            console.log('Buscando en dailyTasks...');
             const dailyTask = this.findDailyTask(taskId);
+            console.log('Daily task encontrada:', dailyTask);
+            
             if (dailyTask) {
                 task = {
                     ...dailyTask,
@@ -271,6 +277,7 @@ class TodoApp {
                     createdAt: new Date().toISOString()
                 };
                 this.tasks.push(task);
+                console.log('Nueva tarea creada y agregada a this.tasks:', task);
             }
         }
         
@@ -278,6 +285,8 @@ class TodoApp {
             const wasCompleted = task.completed;
             task.completed = !task.completed;
             task.completedAt = task.completed ? new Date().toISOString() : null;
+            console.log('Tarea marcada como completada:', task.completed);
+            
             if (task.completed && !wasCompleted) {
                 this.addPoints(task.user, 10);
                 this.showPointsNotification(task.user, 10);
@@ -286,6 +295,9 @@ class TodoApp {
             }
             this.saveTasksToFirebase();
             this.savePointsToFirebase();
+            this.renderTasks(); // Forzar re-render para mostrar cambios
+        } else {
+            console.log('No se pudo encontrar la tarea con ID:', taskId);
         }
     }
 
@@ -397,17 +409,33 @@ class TodoApp {
     }
 
     handleTaskAction(e) {
+        console.log('Click detectado en:', e.target);
+        console.log('Clase del elemento clickeado:', e.target.className);
+        
         const taskItem = e.target.closest('.task-item');
-        if (!taskItem) return;
+        console.log('Task item encontrado:', taskItem);
+        
+        if (!taskItem) {
+            console.log('No se encontró task-item');
+            return;
+        }
+        
         const taskId = taskItem.dataset.taskId;
+        console.log('Task ID:', taskId);
+        
         if (e.target.closest('.task-checkbox')) {
+            console.log('Click en checkbox, llamando toggleTask con ID:', taskId);
             this.toggleTask(taskId);
         } else if (e.target.closest('.task-edit-btn')) {
+            console.log('Click en edit button');
             this.editTask(taskId);
         } else if (e.target.closest('.task-delete-btn')) {
+            console.log('Click en delete button');
             if (confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
                 this.deleteTask(taskId);
             }
+        } else {
+            console.log('Click no reconocido en:', e.target);
         }
     }
 
