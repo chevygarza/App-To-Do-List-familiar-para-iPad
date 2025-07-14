@@ -1163,6 +1163,7 @@ body {
     .scoreboard-btn {
         width: 100%;
     }
+<<<<<<< HEAD
 } 
 
 /* Login Screen */
@@ -1324,4 +1325,6 @@ body {
     .login-header i {
         font-size: 2.5rem;
     }
+=======
+>>>>>>> 40a1ec21a227297ff5980ab91d729a5a754b4349
 } 

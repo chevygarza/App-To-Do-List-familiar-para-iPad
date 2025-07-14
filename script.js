@@ -3,250 +3,29 @@
 class TodoApp {
     constructor() {
         this.currentUser = 'todos';
-        this.tasks = [];
+        this.tasks = this.loadTasks();
         this.dailyTasks = this.getDailyTasks();
-        this.points = {
-            mama: 0,
-            papa: 0,
-            hijo: 0,
-            hija: 0,
-            lastReset: new Date().getMonth()
-        };
-        this.winners = [];
-        this.isAuthenticated = false;
-        this.familyPassword = 'familia2024'; // Contraseña familiar
+        this.points = this.loadPoints();
+        this.winners = this.loadWinners();
         this.init();
     }
 
     init() {
-        this.setupLoginEventListeners();
-        this.checkAuthentication();
+        this.updateDate();
+        this.setupEventListeners();
+        this.renderTasks();
+        this.updateStats();
+        this.checkDailySummary();
+        
+        // Update date every minute
+        setInterval(() => this.updateDate(), 60000);
+        
+        // Check for daily summary every minute
+        setInterval(() => this.checkDailySummary(), 60000);
     }
 
-    // Authentication Methods
-    setupLoginEventListeners() {
-        // Login button
-        document.getElementById('loginBtn').addEventListener('click', () => {
-            this.authenticate();
-        });
-
-        // Enter key in password field
-        document.getElementById('familyPassword').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.authenticate();
-            }
-        });
-
-        // Toggle password visibility
-        document.getElementById('togglePassword').addEventListener('click', () => {
-            this.togglePasswordVisibility();
-        });
-    }
-
-    togglePasswordVisibility() {
-        const passwordInput = document.getElementById('familyPassword');
-        const toggleBtn = document.getElementById('togglePassword');
-        const icon = toggleBtn.querySelector('i');
-
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            icon.className = 'fas fa-eye-slash';
-        } else {
-            passwordInput.type = 'password';
-            icon.className = 'fas fa-eye';
-        }
-    }
-
-    authenticate() {
-        const password = document.getElementById('familyPassword').value;
-        const errorElement = document.getElementById('loginError');
-
-        if (password === this.familyPassword) {
-            this.isAuthenticated = true;
-            this.showApp();
-            this.loadDataFromFirebase();
-            this.setupAppEventListeners();
-            this.updateDate();
-            this.renderTasks();
-            this.updateStats();
-            this.checkDailySummary();
-            
-            // Update date every minute
-            setInterval(() => this.updateDate(), 60000);
-            
-            // Check for daily summary every minute
-            setInterval(() => this.checkDailySummary(), 60000);
-        } else {
-            errorElement.textContent = 'Contraseña incorrecta. Intenta de nuevo.';
-            document.getElementById('familyPassword').value = '';
-            document.getElementById('familyPassword').focus();
-        }
-    }
-
-    checkAuthentication() {
-        // Check if user was previously authenticated (simple session check)
-        const wasAuthenticated = sessionStorage.getItem('todoApp_authenticated');
-        if (wasAuthenticated === 'true') {
-            this.isAuthenticated = true;
-            this.showApp();
-            this.loadDataFromFirebase();
-            this.setupAppEventListeners();
-            this.updateDate();
-            this.renderTasks();
-            this.updateStats();
-            this.checkDailySummary();
-            
-            // Update date every minute
-            setInterval(() => this.updateDate(), 60000);
-            
-            // Check for daily summary every minute
-            setInterval(() => this.checkDailySummary(), 60000);
-        }
-    }
-
-    showApp() {
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('appContainer').style.display = 'flex';
-        sessionStorage.setItem('todoApp_authenticated', 'true');
-    }
-
-    // Firebase Data Management
-    async loadDataFromFirebase() {
-        try {
-            const { database, ref, get } = window.FirebaseApp;
-            
-            // Load tasks
-            const tasksSnapshot = await get(ref(database, 'tasks'));
-            if (tasksSnapshot.exists()) {
-                this.tasks = tasksSnapshot.val();
-            }
-
-            // Load points
-            const pointsSnapshot = await get(ref(database, 'points'));
-            if (pointsSnapshot.exists()) {
-                this.points = pointsSnapshot.val();
-            }
-
-            // Load winners
-            const winnersSnapshot = await get(ref(database, 'winners'));
-            if (winnersSnapshot.exists()) {
-                this.winners = winnersSnapshot.val();
-            }
-
-            // Setup real-time listeners
-            this.setupFirebaseListeners();
-        } catch (error) {
-            console.error('Error loading data from Firebase:', error);
-            this.showNotification('Error al cargar datos. Verificando conexión...');
-        }
-    }
-
-    setupFirebaseListeners() {
-        const { database, ref, onValue } = window.FirebaseApp;
-
-        // Listen for tasks changes
-        onValue(ref(database, 'tasks'), (snapshot) => {
-            if (snapshot.exists()) {
-                this.tasks = snapshot.val();
-                this.renderTasks();
-                this.updateStats();
-            }
-        });
-
-        // Listen for points changes
-        onValue(ref(database, 'points'), (snapshot) => {
-            if (snapshot.exists()) {
-                this.points = snapshot.val();
-            }
-        });
-
-        // Listen for winners changes
-        onValue(ref(database, 'winners'), (snapshot) => {
-            if (snapshot.exists()) {
-                this.winners = snapshot.val();
-            }
-        });
-    }
-
-    async saveTasksToFirebase() {
-        try {
-            const { database, ref, set } = window.FirebaseApp;
-            await set(ref(database, 'tasks'), this.tasks);
-        } catch (error) {
-            console.error('Error saving tasks to Firebase:', error);
-            this.showNotification('Error al guardar. Verificando conexión...');
-        }
-    }
-
-    async savePointsToFirebase() {
-        try {
-            const { database, ref, set } = window.FirebaseApp;
-            this.points.lastReset = new Date().getMonth();
-            await set(ref(database, 'points'), this.points);
-        } catch (error) {
-            console.error('Error saving points to Firebase:', error);
-        }
-    }
-
-    async saveWinnersToFirebase() {
-        try {
-            const { database, ref, set } = window.FirebaseApp;
-            await set(ref(database, 'winners'), this.winners);
-        } catch (error) {
-            console.error('Error saving winners to Firebase:', error);
-        }
-    }
-
-    // Daily tasks for each user
-    getDailyTasks() {
-        return {
-            todos: [
-                { id: 'daily-1', text: 'Revisar el calendario familiar', user: 'todos', daily: true },
-                { id: 'daily-2', text: 'Planificar comidas del día', user: 'todos', daily: true },
-                { id: 'daily-3', text: 'Revisar lista de compras', user: 'todos', daily: true }
-            ],
-            mama: [
-                { id: 'mama-daily-1', text: 'Preparar desayuno', user: 'mama', daily: true },
-                { id: 'mama-daily-2', text: 'Revisar ropa para lavar', user: 'mama', daily: true },
-                { id: 'mama-daily-3', text: 'Planificar cena', user: 'mama', daily: true },
-                { id: 'mama-daily-4', text: 'Revisar medicamentos', user: 'mama', daily: true }
-            ],
-            papa: [
-                { id: 'papa-daily-1', text: 'Revisar correos importantes', user: 'papa', daily: true },
-                { id: 'papa-daily-2', text: 'Verificar finanzas del hogar', user: 'papa', daily: true },
-                { id: 'papa-daily-3', text: 'Revisar mantenimiento casa', user: 'papa', daily: true },
-                { id: 'papa-daily-4', text: 'Planificar actividades familiares', user: 'papa', daily: true }
-            ],
-            hijo: [
-                { id: 'hijo-daily-1', text: 'Hacer la cama', user: 'hijo', daily: true },
-                { id: 'hijo-daily-2', text: 'Organizar mochila', user: 'hijo', daily: true },
-                { id: 'hijo-daily-3', text: 'Hacer tareas escolares', user: 'hijo', daily: true },
-                { id: 'hijo-daily-4', text: 'Limpiar habitación', user: 'hijo', daily: true }
-            ],
-            hija: [
-                { id: 'hija-daily-1', text: 'Hacer la cama', user: 'hija', daily: true },
-                { id: 'hija-daily-2', text: 'Organizar mochila', user: 'hija', daily: true },
-                { id: 'hija-daily-3', text: 'Hacer tareas escolares', user: 'hija', daily: true },
-                { id: 'hija-daily-4', text: 'Limpiar habitación', user: 'hija', daily: true }
-            ]
-        };
-    }
-
-    // Date Display
-    updateDate() {
-        const now = new Date();
-        const options = { 
-            weekday: 'long', 
-            year: 'numeric', 
-            month: 'long', 
-            day: 'numeric' 
-        };
-        const dateString = now.toLocaleDateString('es-ES', options);
-        document.getElementById('currentDate').textContent = dateString;
-    }
-
-    // App Event Listeners
-    setupAppEventListeners() {
+    // Event Listeners
+    setupEventListeners() {
         // User selection
         document.querySelectorAll('.user-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -315,7 +94,9 @@ class TodoApp {
             };
             
             this.tasks.push(task);
-            this.saveTasksToFirebase();
+            this.saveTasks();
+            this.renderTasks();
+            this.updateStats();
             
             input.value = '';
             input.focus();
@@ -337,8 +118,10 @@ class TodoApp {
                 this.addPoints(task.user, -10);
             }
             
-            this.saveTasksToFirebase();
-            this.savePointsToFirebase();
+            this.saveTasks();
+            this.savePoints();
+            this.renderTasks();
+            this.updateStats();
         }
     }
 
@@ -388,10 +171,10 @@ class TodoApp {
             <div class="edit-modal-content">
                 <div class="edit-header">
                     <h3><i class="fas fa-edit"></i> Editar Tarea</h3>
-                    <button class="edit-close-btn">&times;</button>
+                    <button class="edit-close-btn">×</button>
                 </div>
                 <div class="edit-body">
-                    <label for="editTaskInput">Texto de la tarea:</label>
+                    <label for="editTaskInput">Nuevo texto de la tarea:</label>
                     <input type="text" id="editTaskInput" value="${task.text}" maxlength="100">
                     <div class="edit-actions">
                         <button class="edit-cancel-btn">Cancelar</button>
@@ -408,19 +191,16 @@ class TodoApp {
         input.select();
 
         // Event listeners
-        modal.querySelector('.edit-close-btn').addEventListener('click', () => {
-            modal.remove();
-        });
-
-        modal.querySelector('.edit-cancel-btn').addEventListener('click', () => {
-            modal.remove();
-        });
-
+        modal.querySelector('.edit-close-btn').addEventListener('click', () => modal.remove());
+        modal.querySelector('.edit-cancel-btn').addEventListener('click', () => modal.remove());
+        
         modal.querySelector('.edit-save-btn').addEventListener('click', () => {
             const newText = input.value.trim();
-            if (newText) {
+            if (newText !== '') {
                 task.text = newText;
-                this.saveTasksToFirebase();
+                this.saveTasks();
+                this.renderTasks();
+                this.updateStats();
                 modal.remove();
             }
         });
@@ -433,26 +213,27 @@ class TodoApp {
             }
         });
 
-        // Close on background click
+        // Close on outside click
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.remove();
-            }
+            if (e.target === modal) modal.remove();
         });
     }
 
     deleteTask(taskId) {
-        const taskIndex = this.tasks.findIndex(t => t.id === taskId);
-        if (taskIndex !== -1) {
-            this.tasks.splice(taskIndex, 1);
-            this.saveTasksToFirebase();
+        if (confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
+            this.tasks = this.tasks.filter(task => task.id !== taskId);
+            this.saveTasks();
+            this.renderTasks();
+            this.updateStats();
         }
     }
 
     findTask(taskId) {
-        return this.tasks.find(t => t.id === taskId);
+        return this.tasks.find(task => task.id === taskId) || 
+               Object.values(this.dailyTasks).flat().find(task => task.id === taskId);
     }
 
+    // Task Action Handler
     handleTaskAction(e) {
         const taskItem = e.target.closest('.task-item');
         if (!taskItem) return;
@@ -464,12 +245,11 @@ class TodoApp {
         } else if (e.target.closest('.task-edit-btn')) {
             this.editTask(taskId);
         } else if (e.target.closest('.task-delete-btn')) {
-            if (confirm('¿Estás seguro de que quieres eliminar esta tarea?')) {
-                this.deleteTask(taskId);
-            }
+            this.deleteTask(taskId);
         }
     }
 
+    // Rendering
     renderTasks() {
         this.renderDailyTasks();
         this.renderCustomTasks();
@@ -479,8 +259,11 @@ class TodoApp {
         const container = document.getElementById('dailyTasks');
         container.innerHTML = '';
 
-        const dailyTasks = this.dailyTasks[this.currentUser] || [];
-        dailyTasks.forEach(task => {
+        const userDailyTasks = this.dailyTasks[this.currentUser] || [];
+        const allDailyTasks = this.currentUser === 'todos' ? 
+            Object.values(this.dailyTasks).flat() : userDailyTasks;
+
+        allDailyTasks.forEach(task => {
             const taskElement = this.createTaskElement(task);
             container.appendChild(taskElement);
         });
@@ -490,11 +273,16 @@ class TodoApp {
         const container = document.getElementById('customTasks');
         container.innerHTML = '';
 
-        const customTasks = this.tasks.filter(task => 
+        const userTasks = this.tasks.filter(task => 
             task.user === this.currentUser && !task.daily
         );
 
-        customTasks.forEach(task => {
+        if (userTasks.length === 0) {
+            container.innerHTML = '<p class="no-tasks">No hay tareas personalizadas. ¡Agrega una nueva!</p>';
+            return;
+        }
+
+        userTasks.forEach(task => {
             const taskElement = this.createTaskElement(task);
             container.appendChild(taskElement);
         });
@@ -503,34 +291,50 @@ class TodoApp {
     createTaskElement(task) {
         const template = document.getElementById('taskTemplate');
         const taskElement = template.content.cloneNode(true);
-        const taskDiv = taskElement.querySelector('.task-item');
         
-        taskDiv.dataset.taskId = task.id;
-        taskDiv.querySelector('.task-text').textContent = task.text;
+        const taskItem = taskElement.querySelector('.task-item');
+        const taskText = taskElement.querySelector('.task-text');
+        const checkbox = taskElement.querySelector('.task-checkbox i');
+        
+        taskItem.dataset.taskId = task.id;
+        taskText.textContent = task.text;
         
         if (task.completed) {
-            taskDiv.classList.add('completed');
-            taskDiv.querySelector('.task-checkbox i').className = 'fas fa-check-circle';
+            taskItem.classList.add('completed');
+            checkbox.className = 'fas fa-check-circle';
+        } else {
+            checkbox.className = 'fas fa-circle';
+        }
+
+        // Hide delete button for daily tasks
+        if (task.daily) {
+            taskElement.querySelector('.task-delete-btn').style.display = 'none';
         }
         
         return taskElement;
     }
 
+    // Statistics
     updateStats() {
-        const allTasks = [...this.tasks, ...Object.values(this.dailyTasks).flat()];
-        const completedTasks = allTasks.filter(task => task.completed);
-        const pendingTasks = allTasks.filter(task => !task.completed);
+        const allTasks = [
+            ...Object.values(this.dailyTasks).flat(),
+            ...this.tasks.filter(task => task.user === this.currentUser)
+        ];
 
-        document.getElementById('completedCount').textContent = completedTasks.length;
-        document.getElementById('pendingCount').textContent = pendingTasks.length;
+        const completed = allTasks.filter(task => task.completed).length;
+        const pending = allTasks.filter(task => !task.completed).length;
+
+        document.getElementById('completedCount').textContent = completed;
+        document.getElementById('pendingCount').textContent = pending;
     }
 
+    // Daily Summary
     checkDailySummary() {
         const now = new Date();
         const currentHour = now.getHours();
         const currentMinute = now.getMinutes();
         
-        // Show summary at 8:00 PM
+        // Check if it's 8:00 PM (20:00)
         if (currentHour === 20 && currentMinute === 0) {
             this.showDailySummary();
         }
@@ -538,33 +342,43 @@ class TodoApp {
 
     showDailySummary() {
         const pendingTasks = this.getPendingTasksByUser();
-        const content = this.createSummaryHTML(pendingTasks);
-        this.showSummaryModal(content);
+        
+        if (Object.keys(pendingTasks).length === 0) {
+            this.showNotification('¡Excelente! Todas las tareas del día están completadas. 🎉');
+            return;
+        }
+
+        const summaryHTML = this.createSummaryHTML(pendingTasks);
+        this.showSummaryModal(summaryHTML);
     }
 
     getPendingTasksByUser() {
         const pendingTasks = {};
         
-        // Get daily tasks
-        Object.keys(this.dailyTasks).forEach(user => {
-            const userDailyTasks = this.dailyTasks[user];
-            const pendingDailyTasks = userDailyTasks.filter(task => {
-                const existingTask = this.tasks.find(t => t.id === task.id);
-                return !existingTask || !existingTask.completed;
+        // Get all users
+        const users = ['todos', 'mama', 'papa', 'hijo', 'hija'];
+        
+        users.forEach(user => {
+            const userTasks = [];
+            
+            // Add daily tasks
+            const dailyTasks = this.dailyTasks[user] || [];
+            dailyTasks.forEach(task => {
+                if (!task.completed) {
+                    userTasks.push(task.text);
+                }
             });
             
-            if (pendingDailyTasks.length > 0) {
-                pendingTasks[user] = pendingDailyTasks;
-            }
-        });
-        
-        // Get custom tasks
-        this.tasks.forEach(task => {
-            if (!task.completed && !task.daily) {
-                if (!pendingTasks[task.user]) {
-                    pendingTasks[task.user] = [];
-                }
-                pendingTasks[task.user].push(task);
+            // Add custom tasks
+            const customTasks = this.tasks.filter(task => 
+                task.user === user && !task.completed && !task.daily
+            );
+            customTasks.forEach(task => {
+                userTasks.push(task.text);
+            });
+            
+            if (userTasks.length > 0) {
+                pendingTasks[user] = userTasks;
             }
         });
         
@@ -580,38 +394,32 @@ class TodoApp {
             'hija': 'Hija'
         };
 
-        const userIcons = {
-            'todos': 'fas fa-users',
-            'mama': 'fas fa-female',
-            'papa': 'fas fa-male',
-            'hijo': 'fas fa-child',
-            'hija': 'fas fa-child'
-        };
-
         let html = `
             <div class="summary-header">
-                <h2><i class="fas fa-list-check"></i> Resumen del Día</h2>
-                <p>Tareas pendientes por miembro de la familia</p>
+                <h2><i class="fas fa-clock"></i> Resumen del Día - 8:00 PM</h2>
+                <p>Tareas pendientes por completar:</p>
             </div>
             <div class="summary-content">
         `;
 
         Object.keys(pendingTasks).forEach(user => {
             const tasks = pendingTasks[user];
-            html += `
-                <div class="summary-user">
-                    <h3><i class="${userIcons[user]}"></i> ${userNames[user]}</h3>
-                    <ul>
-            `;
-            
-            tasks.forEach(task => {
-                html += `<li><i class="fas fa-circle"></i> ${task.text}</li>`;
-            });
-            
-            html += `
-                    </ul>
-                </div>
-            `;
+            if (tasks.length > 0) {
+                html += `
+                    <div class="summary-user">
+                        <h3><i class="fas fa-user"></i> ${userNames[user]}</h3>
+                        <ul>
+                `;
+                
+                tasks.forEach(task => {
+                    html += `<li><i class="fas fa-circle"></i> ${task}</li>`;
+                });
+                
+                html += `
+                        </ul>
+                    </div>
+                `;
+            }
         });
 
         if (Object.keys(pendingTasks).length === 0) {
@@ -635,6 +443,12 @@ class TodoApp {
     }
 
     showSummaryModal(content) {
+        // Remove existing modal if any
+        const existingModal = document.querySelector('.summary-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
         const modal = document.createElement('div');
         modal.className = 'summary-modal';
         modal.innerHTML = `
@@ -645,7 +459,7 @@ class TodoApp {
 
         document.body.appendChild(modal);
 
-        // Event listeners
+        // Add event listeners
         modal.querySelector('.summary-close-btn').addEventListener('click', () => {
             modal.remove();
         });
@@ -653,6 +467,7 @@ class TodoApp {
         modal.querySelector('.summary-view-all-btn').addEventListener('click', () => {
             modal.remove();
             this.switchUser('todos');
+            document.querySelector('.main-content').scrollIntoView({ behavior: 'smooth' });
         });
 
         // Close on background click
@@ -661,6 +476,13 @@ class TodoApp {
                 modal.remove();
             }
         });
+
+        // Auto-close after 30 seconds
+        setTimeout(() => {
+            if (modal.parentNode) {
+                modal.remove();
+            }
+        }, 30000);
     }
 
     showNotification(message) {
@@ -668,20 +490,20 @@ class TodoApp {
         notification.className = 'notification';
         notification.innerHTML = `
             <div class="notification-content">
-                <i class="fas fa-info-circle"></i>
+                <i class="fas fa-bell"></i>
                 <span>${message}</span>
-                <button class="notification-close">&times;</button>
+                <button class="notification-close">×</button>
             </div>
         `;
 
         document.body.appendChild(notification);
 
-        // Close button
+        // Add event listener for close button
         notification.querySelector('.notification-close').addEventListener('click', () => {
             notification.remove();
         });
 
-        // Auto remove after 5 seconds
+        // Auto-remove after 5 seconds
         setTimeout(() => {
             if (notification.parentNode) {
                 notification.remove();
@@ -690,39 +512,38 @@ class TodoApp {
     }
 
     showScoreboard() {
-        this.resetMonthlyPoints();
-        const winner = this.getMonthlyWinner();
-        if (winner) {
-            this.showMonthlySummary(winner);
+        // Check if month has changed to reset points
+        const currentMonth = new Date().getMonth();
+        if (currentMonth !== this.points.lastReset) {
+            this.resetMonthlyPoints();
         }
-        
-        const content = this.createScoreboardHTML();
-        this.showScoreboardModal(content);
+
+        const scoreboardHTML = this.createScoreboardHTML();
+        this.showScoreboardModal(scoreboardHTML);
     }
 
     resetMonthlyPoints() {
-        const currentMonth = new Date().getMonth();
-        if (this.points.lastReset !== currentMonth) {
-            // Save current month's winner before resetting
-            const currentWinner = this.getMonthlyWinner();
-            if (currentWinner) {
-                this.winners.push({
-                    month: this.getMonthYearString(new Date()),
-                    winner: currentWinner.user,
-                    points: currentWinner.points
-                });
-                this.saveWinnersToFirebase();
-            }
-            
-            // Reset points
-            this.points = {
-                mama: 0,
-                papa: 0,
-                hijo: 0,
-                hija: 0,
-                lastReset: currentMonth
-            };
-            this.savePointsToFirebase();
+        // Guardar ganador antes de reiniciar
+        const winner = this.getMonthlyWinner();
+        if (winner) {
+            this.winners.push({
+                month: this.getMonthYearString(new Date(new Date().getFullYear(), new Date().getMonth() - 1)),
+                user: winner.user,
+                points: winner.points
+            });
+            this.saveWinners();
+        }
+        this.points = {
+            mama: 0,
+            papa: 0,
+            hijo: 0,
+            hija: 0,
+            lastReset: new Date().getMonth()
+        };
+        this.savePoints();
+        // Mostrar resumen del mes anterior
+        if (winner) {
+            setTimeout(() => this.showMonthlySummary(winner), 1000);
         }
     }
 
@@ -733,42 +554,44 @@ class TodoApp {
             'hijo': 'Hijo',
             'hija': 'Hija'
         };
-
+        const users = ['mama', 'papa', 'hijo', 'hija'];
         let maxPoints = 0;
         let winner = null;
-
-        Object.keys(this.points).forEach(user => {
-            if (user !== 'lastReset' && this.points[user] > maxPoints) {
+        users.forEach(user => {
+            if (this.points[user] > maxPoints) {
                 maxPoints = this.points[user];
-                winner = { user, name: userNames[user], points: maxPoints };
+                winner = user;
             }
         });
-
-        return winner;
+        if (winner && maxPoints > 0) {
+            return { user: userNames[winner], points: maxPoints };
+        }
+        return null;
     }
 
     getMonthYearString(date) {
-        const options = { year: 'numeric', month: 'long' };
-        return date.toLocaleDateString('es-ES', options);
+        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        return `${meses[date.getMonth()]} ${date.getFullYear()}`;
     }
 
     showMonthlySummary(winner) {
-        const notification = document.createElement('div');
-        notification.className = 'points-notification';
-        notification.innerHTML = `
-            <div class="points-content">
-                <i class="fas fa-crown"></i>
-                <span>¡${winner.name} es el ganador del mes con ${winner.points} puntos!</span>
+        const modal = document.createElement('div');
+        modal.className = 'scoreboard-modal';
+        modal.innerHTML = `
+            <div class="scoreboard-modal-content">
+                <div class="scoreboard-header">
+                    <h2><i class="fas fa-crown"></i> Empleado del Mes</h2>
+                    <p>¡Felicidades a <b>${winner.user}</b> por ser el ganador del mes anterior con <b>${winner.points} puntos</b>!</p>
+                </div>
+                <div class="scoreboard-footer">
+                    <button class="scoreboard-close-btn">Cerrar</button>
+                </div>
             </div>
         `;
-
-        document.body.appendChild(notification);
-
-        setTimeout(() => {
-            if (notification.parentNode) {
-                notification.remove();
-            }
-        }, 5000);
+        document.body.appendChild(modal);
+        modal.querySelector('.scoreboard-close-btn').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        setTimeout(() => { if (modal.parentNode) modal.remove(); }, 15000);
     }
 
     createScoreboardHTML() {
@@ -779,23 +602,10 @@ class TodoApp {
             'hija': 'Hija'
         };
 
-        const userIcons = {
-            'mama': 'fas fa-female',
-            'papa': 'fas fa-male',
-            'hijo': 'fas fa-child',
-            'hija': 'fas fa-child'
-        };
-
         // Sort users by points
         const sortedUsers = Object.keys(this.points)
-            .filter(user => user !== 'lastReset')
-            .map(user => ({
-                user,
-                name: userNames[user],
-                icon: userIcons[user],
-                points: this.points[user]
-            }))
-            .sort((a, b) => b.points - a.points);
+            .filter(key => key !== 'lastReset')
+            .sort((a, b) => this.points[b] - this.points[a]);
 
         let html = `
             <div class="scoreboard-header">
@@ -805,26 +615,25 @@ class TodoApp {
             <div class="scoreboard-content">
         `;
 
-        sortedUsers.forEach((userData, index) => {
-            const isWinner = index === 0 && userData.points > 0;
-            const rank = index + 1;
-            const badge = this.getAchievementBadge(userData.points);
+        sortedUsers.forEach((user, index) => {
+            const points = this.points[user];
+            const isWinner = index === 0 && points > 0;
             
             html += `
                 <div class="scoreboard-user ${isWinner ? 'winner' : ''}">
                     <div class="user-rank">
-                        <div class="rank-number">${rank}</div>
-                        <i class="fas fa-trophy"></i>
+                        <span class="rank-number">${index + 1}</span>
+                        ${isWinner ? '<i class="fas fa-crown"></i>' : ''}
                     </div>
                     <div class="user-info">
-                        <h3>${userData.name}</h3>
+                        <h3>${userNames[user]}</h3>
                         <div class="user-points">
                             <i class="fas fa-star"></i>
-                            <span>${userData.points} puntos</span>
+                            <span>${points} puntos</span>
                         </div>
                     </div>
                     <div class="user-achievement">
-                        <div class="badge ${badge.class}">${badge.text}</div>
+                        ${this.getAchievementBadge(points)}
                     </div>
                 </div>
             `;
@@ -832,9 +641,21 @@ class TodoApp {
 
         html += `
             </div>
+        `;
+        // Mostrar historial de ganadores
+        if (this.winners.length > 0) {
+            html += `<div class="scoreboard-history">
+                <h3>Historial de Empleados del Mes</h3>
+                <ul>`;
+            this.winners.slice(-6).reverse().forEach(w => {
+                html += `<li><b>${w.month}:</b> ${w.user} (${w.points} puntos)</li>`;
+            });
+            html += `</ul></div>`;
+        }
+        html += `
             <div class="scoreboard-footer">
                 <div class="points-info">
-                    <p><i class="fas fa-info-circle"></i> Cada tarea completada otorga 10 puntos</p>
+                    <p><i class="fas fa-info-circle"></i> Cada tarea completada = 10 puntos</p>
                     <p><i class="fas fa-calendar"></i> Los puntos se reinician cada mes</p>
                 </div>
                 <button class="scoreboard-close-btn">Cerrar</button>
@@ -845,15 +666,10 @@ class TodoApp {
     }
 
     getAchievementBadge(points) {
-        if (points >= 100) {
-            return { class: 'gold', text: '🏆 Maestro' };
-        } else if (points >= 50) {
-            return { class: 'silver', text: '🥈 Experto' };
-        } else if (points >= 20) {
-            return { class: 'bronze', text: '🥉 Aprendiz' };
-        } else {
-            return { class: 'beginner', text: '⭐ Principiante' };
-        }
+        if (points >= 100) return '<span class="badge gold">🏆 Maestro</span>';
+        if (points >= 50) return '<span class="badge silver">🥈 Experto</span>';
+        if (points >= 20) return '<span class="badge bronze">🥉 Aprendiz</span>';
+        return '<span class="badge beginner">⭐ Principiante</span>';
     }
 
     showScoreboardModal(content) {
@@ -867,21 +683,41 @@ class TodoApp {
 
         document.body.appendChild(modal);
 
-        // Event listeners
+        // Event listener
         modal.querySelector('.scoreboard-close-btn').addEventListener('click', () => {
             modal.remove();
         });
 
-        // Close on background click
+        // Close on outside click
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
+            if (e.target === modal) modal.remove();
+        });
+
+        // Auto-close after 60 seconds
+        setTimeout(() => {
+            if (modal.parentNode) {
                 modal.remove();
             }
-        });
+        }, 60000);
     }
 }
 
-// Initialize the app when the page loads
+// Initialize the app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     new TodoApp();
-}); 
+});
+
+// Add some CSS for the no-tasks message
+const style = document.createElement('style');
+style.textContent = `
+    .no-tasks {
+        text-align: center;
+        color: #718096;
+        font-style: italic;
+        padding: 20px;
+        background: #f7fafc;
+        border-radius: 10px;
+        border: 2px dashed #e2e8f0;
+    }
+`;
+document.head.appendChild(style);
