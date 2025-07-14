@@ -259,7 +259,21 @@ class TodoApp {
     }
 
     toggleTask(taskId) {
-        const task = this.findTask(taskId);
+        let task = this.findTask(taskId);
+        
+        // Si no existe en this.tasks, buscar en dailyTasks y crear entrada
+        if (!task) {
+            const dailyTask = this.findDailyTask(taskId);
+            if (dailyTask) {
+                task = {
+                    ...dailyTask,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                };
+                this.tasks.push(task);
+            }
+        }
+        
         if (task) {
             const wasCompleted = task.completed;
             task.completed = !task.completed;
@@ -374,6 +388,14 @@ class TodoApp {
         return this.tasks.find(t => t.id === taskId);
     }
 
+    findDailyTask(taskId) {
+        for (const userTasks of Object.values(this.dailyTasks)) {
+            const task = userTasks.find(t => t.id === taskId);
+            if (task) return task;
+        }
+        return null;
+    }
+
     handleTaskAction(e) {
         const taskItem = e.target.closest('.task-item');
         if (!taskItem) return;
@@ -422,7 +444,12 @@ class TodoApp {
         const taskDiv = taskElement.querySelector('.task-item');
         taskDiv.dataset.taskId = task.id;
         taskDiv.querySelector('.task-text').textContent = task.text;
-        if (task.completed) {
+        
+        // Verificar si la tarea está completada (buscar en this.tasks primero)
+        const savedTask = this.findTask(task.id);
+        const isCompleted = savedTask ? savedTask.completed : false;
+        
+        if (isCompleted) {
             taskDiv.classList.add('completed');
             taskDiv.querySelector('.task-checkbox i').className = 'fas fa-check-circle';
         }
@@ -430,7 +457,17 @@ class TodoApp {
     }
 
     updateStats() {
-        const allTasks = [...this.tasks, ...Object.values(this.dailyTasks).flat()];
+        // Combinar tareas personalizadas con tareas diarias, verificando estado guardado
+        const allTasks = [...this.tasks];
+        
+        // Agregar tareas diarias que no están en this.tasks
+        Object.values(this.dailyTasks).flat().forEach(dailyTask => {
+            const existingTask = this.tasks.find(t => t.id === dailyTask.id);
+            if (!existingTask) {
+                allTasks.push({ ...dailyTask, completed: false });
+            }
+        });
+        
         const completedTasks = allTasks.filter(task => task.completed);
         const pendingTasks = allTasks.filter(task => !task.completed);
         document.getElementById('completedCount').textContent = completedTasks.length;
