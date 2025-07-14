@@ -1,13 +1,26 @@
 # To-Do Familiar - App para iPad Central
 
-Una aplicación web moderna y amigable para gestionar tareas familiares diarias, optimizada para iPad central en el hogar.
+Una aplicación web moderna y amigable para gestionar tareas familiares diarias, optimizada para iPad central en el hogar con **sincronización automática entre dispositivos**.
+
+## 🔐 **Nueva Funcionalidad: Autenticación y Sincronización**
+
+### **Características de Seguridad:**
+- ✅ **Contraseña familiar única** para acceder a la app
+- ✅ **Sincronización automática** entre todos los dispositivos
+- ✅ **Datos en tiempo real** usando Firebase
+- ✅ **Sin registro** de usuarios individuales
+- ✅ **Sesión persistente** (no necesitas ingresar contraseña cada vez)
+
+### **Contraseña por Defecto:**
+- **Contraseña**: `familia2024`
+- **Puedes cambiarla** editando el archivo `script.js`
 
 ## 🏠 Características
 
 - **Interfaz táctil optimizada** para iPad
 - **Tareas fijas diarias** para diferentes miembros de la familia
 - **Tareas personalizadas** que se pueden agregar
-- **Persistencia local** de datos (no se pierden al cerrar)
+- **Sincronización automática** entre dispositivos
 - **Diseño responsivo** y moderno
 - **Estadísticas en tiempo real** de tareas completadas/pendientes
 - **Resumen diario automático** a las 8:00 PM con tareas pendientes
@@ -49,7 +62,13 @@ Una aplicación web moderna y amigable para gestionar tareas familiares diarias,
 
 ## 🚀 Cómo Usar
 
-1. **Abrir la aplicación**: Simplemente abre el archivo `index.html` en Safari del iPad
+### **Primera vez:**
+1. **Abrir la aplicación**: Ve a la URL de la app
+2. **Ingresar contraseña**: Escribe `familia2024`
+3. **¡Listo!** Acceso inmediato a la app
+
+### **Uso diario:**
+1. **Abrir la aplicación**: La app se abre automáticamente (sin contraseña)
 2. **Seleccionar usuario**: Toca el botón del miembro de la familia
 3. **Ver tareas diarias**: Las tareas fijas aparecen en la sección izquierda
 4. **Agregar tareas personalizadas**: Usa el campo de texto en la sección derecha
@@ -57,14 +76,28 @@ Una aplicación web moderna y amigable para gestionar tareas familiares diarias,
 6. **Editar tarea**: Toca el ícono de editar (lápiz)
 7. **Eliminar tarea**: Toca el ícono de eliminar (basura)
 8. **Ver resumen del día**: Toca el botón "Ver Resumen del Día" en la parte inferior
-9. **Editar tarea**: Toca el ícono de lápiz junto a la tarea
-10. **Ver scoreboard**: Toca el botón "Scoreboard" para ver los puntos del mes
+9. **Ver scoreboard**: Toca el botón "Scoreboard" para ver los puntos del mes
+
+## 🔄 Sincronización Automática
+
+### **¿Cómo funciona?**
+- **Tiempo real**: Los cambios aparecen en todos los dispositivos en 1-2 segundos
+- **Automático**: No necesitas hacer nada, la sincronización es transparente
+- **Confiable**: Usa Firebase (Google) para garantizar que los datos no se pierdan
+
+### **Escenario de uso:**
+1. **iPad de la cocina**: Mamá agrega "Comprar leche"
+2. **Automáticamente** (en 1-2 segundos):
+   - Papá ve la tarea en su iPhone
+   - Hijo ve la tarea en su iPad
+   - Hija ve la tarea en su computadora
 
 ## 💾 Almacenamiento
 
-- Los datos se guardan automáticamente en el navegador
-- No se requiere conexión a internet después de la carga inicial
-- Los datos persisten entre sesiones
+- **Firebase**: Los datos se guardan en la nube de Google
+- **Sincronización automática** entre todos los dispositivos
+- **Sin límite** de dispositivos conectados
+- **Datos seguros** y respaldados automáticamente
 
 ## 📊 Resumen Diario
 
@@ -93,9 +126,15 @@ Una aplicación web moderna y amigable para gestionar tareas familiares diarias,
 - **Validación**: No permite guardar tareas vacías
 - **Atajos de teclado**: Enter para guardar, Escape para cancelar
 
-## 🎨 Personalización
+## 🔧 Personalización
 
-### Agregar Nuevos Usuarios
+### **Cambiar Contraseña Familiar**
+Edita el archivo `script.js` y cambia esta línea:
+```javascript
+this.familyPassword = 'familia2024'; // Cambia por tu nueva contraseña
+```
+
+### **Agregar Nuevos Usuarios**
 Edita el archivo `script.js` y agrega nuevos usuarios en la función `getDailyTasks()`:
 
 ```javascript
@@ -105,10 +144,10 @@ nuevoUsuario: [
 ]
 ```
 
-### Cambiar Tareas Diarias
+### **Cambiar Tareas Diarias**
 Modifica las tareas en la función `getDailyTasks()` del archivo `script.js`.
 
-### Personalizar Colores
+### **Personalizar Colores**
 Edita el archivo `styles.css` para cambiar los colores y el diseño.
 
 ## 📱 Optimización para iPad
@@ -120,9 +159,9 @@ Edita el archivo `styles.css` para cambiar los colores y el diseño.
 
 ## 🔧 Instalación
 
-1. Descarga todos los archivos en una carpeta
-2. Abre `index.html` en Safari del iPad
-3. Para mejor experiencia, agrega la página a la pantalla de inicio:
+1. **Abrir la aplicación**: Ve a la URL de GitHub Pages
+2. **Ingresar contraseña**: `familia2024`
+3. **Para mejor experiencia**, agrega la página a la pantalla de inicio:
    - Toca el botón compartir en Safari
    - Selecciona "Agregar a pantalla de inicio"
 
@@ -130,8 +169,9 @@ Edita el archivo `styles.css` para cambiar los colores y el diseño.
 
 - `index.html` - Estructura principal de la aplicación
 - `styles.css` - Estilos y diseño
-- `script.js` - Funcionalidad y lógica
+- `script.js` - Funcionalidad, autenticación y sincronización
 - `README.md` - Este archivo de instrucciones
+- `FULLSCREEN_SETUP.md` - Guía para modo app nativa
 
 ## 🎯 Consejos de Uso
 
@@ -139,16 +179,24 @@ Edita el archivo `styles.css` para cambiar los colores y el diseño.
 - **Horario recomendado**: Revisar por la mañana y antes de dormir
 - **Mantenimiento**: Las tareas diarias se reinician automáticamente
 - **Colaboración**: Toda la familia puede ver y marcar tareas
+- **Sincronización**: Los cambios aparecen automáticamente en todos los dispositivos
 
 ## 🔄 Actualizaciones Futuras
 
 Posibles mejoras que se pueden implementar:
-- Sincronización entre dispositivos
 - Notificaciones push
 - Calendario integrado
 - Lista de compras automática
 - Estadísticas semanales/mensuales
 - Temas personalizables
+- Usuarios individuales con contraseñas separadas
+
+## 🔐 Seguridad
+
+- **Contraseña familiar**: Protege el acceso a la app
+- **Datos encriptados**: Firebase encripta automáticamente los datos
+- **Sin datos personales**: Solo se guardan tareas y puntos
+- **Acceso controlado**: Solo familia con la contraseña puede acceder
 
 ---
 
