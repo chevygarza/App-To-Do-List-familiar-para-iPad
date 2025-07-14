@@ -12,14 +12,12 @@ body {
     color: #333;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Fullscreen app styles */
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
     overflow: hidden;
-    /* Prevent bounce scrolling on iOS */
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: none;
 }

@@ -6,6 +6,7 @@ class TodoApp {
         this.tasks = this.loadTasks();
         this.dailyTasks = this.getDailyTasks();
         this.points = this.loadPoints();
+        this.winners = this.loadWinners();
         this.init();
     }
 
@@ -82,6 +83,15 @@ class TodoApp {
     savePoints() {
         this.points.lastReset = new Date().getMonth();
         localStorage.setItem('todoApp_points', JSON.stringify(this.points));
+    }
+
+    loadWinners() {
+        const saved = localStorage.getItem('todoApp_winners');
+        return saved ? JSON.parse(saved) : [];
+    }
+
+    saveWinners() {
+        localStorage.setItem('todoApp_winners', JSON.stringify(this.winners));
     }
 
     // Date Display
@@ -580,6 +590,16 @@ class TodoApp {
     }
 
     resetMonthlyPoints() {
+        // Guardar ganador antes de reiniciar
+        const winner = this.getMonthlyWinner();
+        if (winner) {
+            this.winners.push({
+                month: this.getMonthYearString(new Date(new Date().getFullYear(), new Date().getMonth() - 1)),
+                user: winner.user,
+                points: winner.points
+            });
+            this.saveWinners();
+        }
         this.points = {
             mama: 0,
             papa: 0,
@@ -588,6 +608,57 @@ class TodoApp {
             lastReset: new Date().getMonth()
         };
         this.savePoints();
+        // Mostrar resumen del mes anterior
+        if (winner) {
+            setTimeout(() => this.showMonthlySummary(winner), 1000);
+        }
+    }
+
+    getMonthlyWinner() {
+        const userNames = {
+            'mama': 'Mamá',
+            'papa': 'Papá',
+            'hijo': 'Hijo',
+            'hija': 'Hija'
+        };
+        const users = ['mama', 'papa', 'hijo', 'hija'];
+        let maxPoints = 0;
+        let winner = null;
+        users.forEach(user => {
+            if (this.points[user] > maxPoints) {
+                maxPoints = this.points[user];
+                winner = user;
+            }
+        });
+        if (winner && maxPoints > 0) {
+            return { user: userNames[winner], points: maxPoints };
+        }
+        return null;
+    }
+
+    getMonthYearString(date) {
+        const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        return `${meses[date.getMonth()]} ${date.getFullYear()}`;
+    }
+
+    showMonthlySummary(winner) {
+        const modal = document.createElement('div');
+        modal.className = 'scoreboard-modal';
+        modal.innerHTML = `
+            <div class="scoreboard-modal-content">
+                <div class="scoreboard-header">
+                    <h2><i class="fas fa-crown"></i> Empleado del Mes</h2>
+                    <p>¡Felicidades a <b>${winner.user}</b> por ser el ganador del mes anterior con <b>${winner.points} puntos</b>!</p>
+                </div>
+                <div class="scoreboard-footer">
+                    <button class="scoreboard-close-btn">Cerrar</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        modal.querySelector('.scoreboard-close-btn').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+        setTimeout(() => { if (modal.parentNode) modal.remove(); }, 15000);
     }
 
     createScoreboardHTML() {
@@ -637,6 +708,18 @@ class TodoApp {
 
         html += `
             </div>
+        `;
+        // Mostrar historial de ganadores
+        if (this.winners.length > 0) {
+            html += `<div class="scoreboard-history">
+                <h3>Historial de Empleados del Mes</h3>
+                <ul>`;
+            this.winners.slice(-6).reverse().forEach(w => {
+                html += `<li><b>${w.month}:</b> ${w.user} (${w.points} puntos)</li>`;
+            });
+            html += `</ul></div>`;
+        }
+        html += `
             <div class="scoreboard-footer">
                 <div class="points-info">
                     <p><i class="fas fa-info-circle"></i> Cada tarea completada = 10 puntos</p>
